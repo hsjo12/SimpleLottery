@@ -32,7 +32,7 @@ Senario 2 : a user play a lotter game with rewards tokens
 Process 
 
 1. 
-git clone https://github.com/hsjo12/SimpleLottery
+git clone https://github.com/hsjo12/SimpleLottery.git
  
 2.
 npm i 
