@@ -31,6 +31,8 @@ Senario 2 : a user play a lotter game with rewards tokens
 *******************************************************************************************************************************************************************
 Process 
 
+Straighforwardly, You can visit "https://6303284a2a41dd2d7edb1c4e-funny-boba.netlify.app/"
+
 1. 
 git clone https://github.com/hsjo12/SimpleLottery.git
  
