@@ -14,7 +14,7 @@ contract TicketMarket is ReentrancyGuard, AccessControl{
     
     error FailedToSendETH();
     error rateMustBeMoreThan1(uint8 rate);
-    bytes32 constant MANAGER = keccak256(bytes("MANAGER")); 
+    bytes32 constant MANAGER = 0xaf290d8680820aad922855f39b306097b20e28774d6c1ad35a20325630c3a02c; 
     uint8 public s_rate;
     address immutable public s_ticketTokn;
     address immutable public s_treasury; 

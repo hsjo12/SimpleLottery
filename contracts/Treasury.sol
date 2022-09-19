@@ -8,9 +8,10 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 contract Treasury is AccessControl{
     error FailedToSendETH();
+    error InsufficientRewards(uint256 _currentRewards, uint256 _amount);
     error ClaimRewardsFail();
-    bytes32 constant MANAGER = keccak256(bytes("MANAGER")); 
-    bytes32 constant SENDER = keccak256(bytes("SENDER")); 
+    bytes32 constant MANAGER = 0xaf290d8680820aad922855f39b306097b20e28774d6c1ad35a20325630c3a02c; 
+    bytes32 constant SENDER = 0xcf2b1209506b76f140fb1bc5fe66d6e42627c4b9703a951d65552f50f14c9ee7; 
     uint256 public s_rewardTreasury;
     uint256 public s_adminTreasury;
     uint8 public s_adminRate;
@@ -55,6 +56,8 @@ contract Treasury is AccessControl{
         }   
        
         s_rewardTreasury = rewardTreasury - totalReward;
+
+        
         roundRewardsTracker[_round] = totalReward;
         s_roundRewardsHistory[_round] = totalReward;
         rewardsPerWinner[_round] = eachRewards;
@@ -70,14 +73,10 @@ contract Treasury is AccessControl{
     }
 
 
-    function claimRewards(address _to, uint256 _round)  external onlyRole(SENDER)  {
+    function claimRewards(address _to, uint256 _round) external onlyRole(SENDER)  {
         uint amount = s_rewardsPerWinner[_round];
         uint256 rewardTreasury = s_roundRewardsTracker[_round];    
-        if(rewardTreasury>=amount){
-            unchecked {
-                s_roundRewardsTracker[_round] = rewardTreasury - amount;
-            }
-        }
+        s_roundRewardsTracker[_round] = rewardTreasury - amount;
         (bool _result,) = _to.call{value:amount}("");
         if(!_result) revert ClaimRewardsFail();
     }

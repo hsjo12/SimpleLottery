@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "hardhat/console.sol";
 
-interface IERC20 {
+interface IERC20_BURN {
     function burnFrom(address account, uint256 amount) external;
 }
 interface IVRFv2Consumber  {
@@ -24,7 +24,7 @@ interface ITreasury {
     function claimRewards(address _to, uint256 _round)  external;
 }
 contract LotteryBox is ReentrancyGuard, AccessControl {
-    bytes32 constant MANAGER = keccak256(bytes("MANAGER")); 
+    bytes32 constant MANAGER = 0xaf290d8680820aad922855f39b306097b20e28774d6c1ad35a20325630c3a02c; 
    
     error WrongNumbers(uint256 _pickNumber);
     error NotWinner();
@@ -45,16 +45,16 @@ contract LotteryBox is ReentrancyGuard, AccessControl {
     uint256 public s_ticketgameFee = 0.1 ether; 
     uint256 public s_rewardsTicketgameFee = 1 ether; 
     IVRFv2Consumber immutable public s_VRFv2Consumber;
-    IERC20 immutable public s_ticketToken;
-    IERC20 immutable public s_rewardsTicketToken;
+    IERC20_BURN immutable public s_ticketToken;
+    IERC20_BURN immutable public s_rewardsTicketToken;
     ITreasury immutable public s_treasury;
 
 
     constructor(address _VRFv2Consumber, address _ticketToken, address _rewardsTicketToken, address _treasury){
         s_VRFv2Consumber = IVRFv2Consumber(_VRFv2Consumber);
-        s_ticketToken = IERC20(_ticketToken);
+        s_ticketToken = IERC20_BURN(_ticketToken);
         s_treasury = ITreasury(_treasury);
-        s_rewardsTicketToken=IERC20(_rewardsTicketToken);
+        s_rewardsTicketToken=IERC20_BURN(_rewardsTicketToken);
         _setupRole(DEFAULT_ADMIN_ROLE,msg.sender);
         _setupRole(MANAGER,msg.sender);
     }
@@ -79,7 +79,7 @@ contract LotteryBox is ReentrancyGuard, AccessControl {
     }
     
 
-    function openResult() external onlyRole(MANAGER) {
+    function openResult() external onlyRole(MANAGER) nonReentrant() {
         uint winNumber =s_VRFv2Consumber.s_randomWords(0);
         uint round = s_round;
         s_winNumberList[round] = winNumber;
@@ -114,14 +114,14 @@ contract LotteryBox is ReentrancyGuard, AccessControl {
         }
     }
 
-    function getJoinedList(uint256 _round,uint256 _pickNumber) public view returns(address[] memory) {
+    function getJoinedList(uint256 _round,uint256 _pickNumber) external view returns(address[] memory) {
         return s_joinedList[_round][_pickNumber];
     }
-    function getUserSelectedNumbers(uint256 _round,address _user) public view returns(uint256[] memory) {
+    function getUserSelectedNumbers(uint256 _round,address _user) external view returns(uint256[] memory) {
         return s_userSelectedNumbers[_round][_user];
     }
 
-    function getIsNotClaimed(uint256 _round,address _user,uint256 _pickNumber) public view returns(bool) {
+    function getIsNotClaimed(uint256 _round,address _user,uint256 _pickNumber) external view returns(bool) {
         return s_isNotClaimed[_round][_user][_pickNumber];
     }
     function setGameFeeWithTickets(uint256 _gameFee) external onlyRole(MANAGER) {
@@ -132,3 +132,20 @@ contract LotteryBox is ReentrancyGuard, AccessControl {
     }
 
 }
+
+/*
+
+    //To add this soon
+    function findHowManyNumbersMatched(string memory _input, string memory _targetNum) public pure returns(uint){
+        bytes memory inputInBytes = bytes(_input);
+        bytes memory targetNumInBytes = bytes(_targetNum);
+        uint correct;
+        for(uint i; i < inputInBytes.length; i++){
+            if(inputInBytes[i]==targetNumInBytes[i]){
+                correct++;
+            }
+        }
+        return correct;
+    } 
+
+*/ 

@@ -1,0 +1,181 @@
+Good Things:
+Swtich network option
+Usage of error() in solidity
+
+Smart Contracts
+- Add option to add network 
+
+I do not really get what it means ? 
+Are we able to add the options? 
+Well, I am afraid that I do not know how to do that.. 
+Can you please explain it more?  
+
+- Generate test coverage reports
+
+I generated my test coverage report as follow; 
+------------------------|----------|----------|----------|----------|----------------|
+File                    |  % Stmts | % Branch |  % Funcs |  % Lines |Uncovered Lines |
+------------------------|----------|----------|----------|----------|----------------|
+ contracts\             |    47.92 |    36.67 |       50 |    47.65 |                |
+  LotteryBox.sol        |        0 |        0 |        0 |        0 |... 125,128,131 |
+  RewardTicketToken.sol |      100 |      100 |      100 |      100 |                |
+  StakeBox.sol          |       96 |    60.53 |      100 |    95.35 |        122,123 |
+  TicketMarket.sol      |      100 |     62.5 |      100 |      100 |                |
+  TicketToken.sol       |      100 |      100 |      100 |      100 |                |
+  Treasury.sol          |    23.81 |     5.56 |       20 |    27.27 |... 85,89,92,95 |
+  VRFv2Consumer.sol     |        0 |        0 |        0 |        0 |... 63,76,79,80 |
+------------------------|----------|----------|----------|----------|----------------|
+All files               |    47.92 |    36.67 |       50 |    47.65 |                |
+------------------------|----------|----------|----------|----------|----------------|
+
+I think I can understand %Branch and %Funcs, but I am unsure of what %Stmts, %Lines, and Uncovered Lines. 
+I was trying to find what they mean, but I failed to find them. 
+Would you please explain them or plese share the resource link?   
+
+
+- Improve readme add diagrams ( if possible), commands not formatted 
+
+
+
+- Add information about different contracts and their purpose
+
+
+
+- declare constant for fixed values 
+Yes I did, 
+- use precomputed hashes for the certain values such -  keccak256(bytes("MANAGER")); 
+
+is it becuase the precomuted hash saves gas more? 
+I have tested the precomputed hashes uses less gas than keccak256(bytes("MANAGER"));. 
+So, am I awalys supposed to use  precomputed hashes rather than keccak256(bytes("MANAGER")); ?? 
+
+
+ why use unchecked?
+unchecked {
+                s_roundRewardsTracker[_round] = rewardTreasury - amount;
+            }
+Rule of thumb is to Prioritize security over gas optimization. But I notice you are protecting it by if statement, did you check the gas efficiency is it worth it? Try to keep things simple, to prevent unncessary code complexity.
+
+I think I accidentally put if statement instead of if+revert. 
+
+Thank you, I changed code as your advice. 
+
+Do you think that I am necessarily have to check if the rewardTreasury >= amount before user get their reward of each round.
+So basically, the variable rewardTreasury is total amount of rewards, and the variable amount is total amount of rewards per winner in a round. 
+
+For example, 
+if total rewards is 100 tokens, and the winners are 5 in the round 1, then each winner gets 20 tokens through the claimRewards function. 
+so, before the claimRewards function is interacted with winners and the 20 tokens as rewards per winner in the round 1 is sent, do I better have to check if  the rewardTreasury >= amount ?
+
+- Use events for functions such as claim rewards and wherever applicable
+Okay, I did it. 
+I think events should be used when tokens are moved out. 
+are there any more usecases where events shoud be used ? 
+
+-  s_adminRate = 20; not a good practice in constructor, use constant or immutables instead
+
+I actually want the admin to change s_adminRate so that the admin can control the rate anytime.  
+However, do you think it is better that the rate should not be changed?
+
+if it is okay for users to set up s_adminRate anytime, should I put s_adminRate into constructor and get the valu from the argument of its constructor?
+it is something below like, 
+
+constructor(uint _value) {
+    s_adminRate = value;
+}
+
+
+
+
+- Multiply and then divide  (  
+    eachRewards = rewardTreasury/_totalWinnerNums;
+    totalReward = eachRewards*_totalWinnerNums;
+)
+
+I was trying to multiply and divide them. 
+However, it seems not working like that... 
+
+
+so the code is like below 
+    function updateEachUserClaim(
+        uint256 _round,
+        uint256 _totalWinnerNums
+    ) 
+        external  
+        onlyRole(SENDER) 
+    {
+        ....
+        if(_totalWinnerNums!=0){
+            eachRewards = rewardTreasury/_totalWinnerNums;
+            totalReward = eachRewards*_totalWinnerNums;
+        }   
+       
+        s_rewardTreasury = rewardTreasury - totalReward;
+        ....
+    }
+
+_totalWinnerNums: the number of winners in each round 
+s_rewardTreasury : the total rewards as a state variable.
+rewardTreasury: a copy of s_rewardTreasury as a local variable. 
+eachRewards : the reward for each winner as an element used for the "totalReward" variable  
+totalReward: the total rewards is newly calculated to subtract totalReward from s_rewardTreasury. 
+
+For example, it is assumed down below;
+
+s_rewardTreasury  : 100
+rewardTreasury : 100 ( as it is a copy of s_rewardTreasury)
+_totalWinnerNums  :  3
+eachRewards : 33 (rewardTreasury/_totalWinnerNums =>  100/3 = 33.333333 (float is not supported) )
+totalReward : 99 (eachRewards * _totalWinnerNums => 33 * 3 = 99) 
+as it can be seen, the calculated amount of total rewards in totalReward is not as same as the original amount of total rewards in s_rewardTreasury. 
+This is because the float is not supported, so I calculated it again and I will subtract the variable totalReward (= 99) from  the variable s_rewardTreasury (=100).
+So I can save 1 and can add it to the next reward.
+
+s_rewardTreasury : 1 (rewardTreasury - totalReward => 100 - 99 = 1)
+
+
+What if I just omit the calcualtion for the totalReward and the subtraction, and declare  s_rewardTreasury = 0;
+then I would lose 1. 
+
+So I made that kind of process. 
+
+But I am unsure if I am doing right?
+If you have better idea, please give me advice :) 
+
+- Dont use magic number - _mint(msg.sender, 10 ether);
+
+So, Should I pass the number as a constructor argument ?
+
+constructor(uint _amount) {
+    _mint(msg.sender, _amount * 10**18);
+}
+
+- Try to run slither on the contracts
+
+Red: 
+1. - Treasury.claimRewards(address,uint256) (contracts/Treasury.sol#76-82) sends eth to arbitrary user
+
+is It really a problem? 
+becuase I add the modifier that only SENDER can execute the function to send ether to msg.sender whose owns the SENDER role. 
+Should I have to put a specific address other than msg.sender. 
+
+
+Do I have to fix evrythin of the yellow and green warnings? 
+I can see some of them may not really be about security.. 
+
+
+
+
+
+Frontend
+- UI unsable not able to see all the options on Play screen
+- Add a how to guide
+
+For some reason website stopped working??
+
+General Recommendations:
+- Create hooks for common functions used more than once
+- Use indexing service to read the data such as graph ( if required)
+- Remove commented out code
+- Do a security audit (try to hack yourself) 
+- Add test coverage report 

@@ -3,12 +3,16 @@ pragma solidity ^0.8.0;
 
 // Import this file to use console.log
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+
 import "hardhat/console.sol";
 
 contract StakeBox is ReentrancyGuard, AccessControl {
-    bytes32 constant MANAGER = keccak256(bytes("MANAGER")); 
+    using SafeERC20 for IERC20;
+    bytes32 constant MANAGER = 0xaf290d8680820aad922855f39b306097b20e28774d6c1ad35a20325630c3a02c; 
     IERC20 public immutable stakingToken;
     IERC20 public immutable rewardsToken;
 
@@ -70,7 +74,7 @@ contract StakeBox is ReentrancyGuard, AccessControl {
 
     function stake(uint _amount) external updateReward(msg.sender) {
         require(_amount > 0, "amount = 0");
-        stakingToken.transferFrom(msg.sender, address(this), _amount);
+        stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
         balanceOf[msg.sender] += _amount;
         totalSupply += _amount;
     }
@@ -79,11 +83,11 @@ contract StakeBox is ReentrancyGuard, AccessControl {
         require(_amount > 0, "amount = 0");
         balanceOf[msg.sender] -= _amount;
         totalSupply -= _amount;
-        stakingToken.transfer(msg.sender, _amount);
+        stakingToken.safeTransfer(msg.sender, _amount);
         uint reward = rewards[msg.sender];
         if (reward > 0) {
             rewards[msg.sender] = 0;
-            rewardsToken.transfer(msg.sender, reward);
+            rewardsToken.safeTransfer(msg.sender, reward);
         }
     }
 
@@ -98,7 +102,7 @@ contract StakeBox is ReentrancyGuard, AccessControl {
         uint reward = rewards[msg.sender];
         if (reward > 0) {
             rewards[msg.sender] = 0;
-            rewardsToken.transfer(msg.sender, reward);
+            rewardsToken.safeTransfer(msg.sender, reward);
         }
     }
 
@@ -118,7 +122,7 @@ contract StakeBox is ReentrancyGuard, AccessControl {
             uint remainingRewards = (finishAt - block.timestamp) * rewardRate;
             rewardRate = (_amount + remainingRewards) / duration;
         }
-        rewardsToken.transferFrom(msg.sender, address(this), _amount);
+        rewardsToken.safeTransferFrom(msg.sender, address(this), _amount);
         require(rewardRate > 0, "reward rate = 0");
         require(
             rewardRate * duration <= rewardsToken.balanceOf(address(this)),
